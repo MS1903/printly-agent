@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Printly — Sign In</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #080e1a;
+      color: #fff;
+      font-family: -apple-system, system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 24px;
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+    .logo-row span {
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -0.3px;
+    }
+    .card {
+      width: 100%;
+      max-width: 340px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px;
+      padding: 28px;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      letter-spacing: -0.4px;
+    }
+    p.sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      color: #fff;
+      outline: none;
+      margin-bottom: 14px;
+    }
+    input.code-input {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      text-align: center;
+      font-family: monospace;
+    }
+    button.primary {
+      width: 100%;
+      background: #ff2d78;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 0;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.ghost {
+      width: 100%;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.3);
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .error {
+      color: #ff2d78;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo-row">
+    <span>Printly Agent</span>
+  </div>
+
+  <div class="card">
+    <!-- Step 1: Email -->
+    <div id="step-email">
+      <h1>Sign in</h1>
+      <p class="sub">We'll email you a 6-digit code.</p>
+      <label>Email address</label>
+      <input type="email" id="email" placeholder="you@example.com" autofocus>
+      <div id="err1" class="error" style="display:none"></div>
+      <button class="primary" id="btn-send">Send code</button>
+    </div>
+
+    <!-- Step 2: Code -->
+    <div id="step-code" style="display:none">
+      <h1>Check your email</h1>
+      <p class="sub" id="code-sub">We sent a code to your email.</p>
+      <label>6-digit code</label>
+      <input type="text" inputmode="numeric" maxlength="6" class="code-input" id="code" placeholder="000000">
+      <div id="err2" class="error" style="display:none"></div>
+      <button class="primary" id="btn-verify" disabled>Verify & sign in</button>
+      <button class="ghost" id="btn-back">Use a different email</button>
+    </div>
+  </div>
+
+  <script>
+    const emailInput  = document.getElementById('email')
+    const codeInput   = document.getElementById('code')
+    const stepEmail   = document.getElementById('step-email')
+    const stepCode    = document.getElementById('step-code')
+    const btnSend     = document.getElementById('btn-send')
+    const btnVerify   = document.getElementById('btn-verify')
+    const btnBack     = document.getElementById('btn-back')
+    const err1        = document.getElementById('err1')
+    const err2        = document.getElementById('err2')
+    const codeSub     = document.getElementById('code-sub')
+
+    let email = ''
+
+    codeInput.addEventListener('input', () => {
+      const val = codeInput.value.replace(/\D/g, '')
+      codeInput.value = val
+      btnVerify.disabled = val.length !== 6
+    })
+
+    btnSend.addEventListener('click', async () => {
+      email = emailInput.value.trim()
+      if (!email) return
+      btnSend.disabled = true
+      btnSend.textContent = 'Sending…'
+      err1.style.display = 'none'
+      const res = await window.agent.sendCode(email)
+      btnSend.disabled = false
+      btnSend.textContent = 'Send code'
+      if (res.sent) {
+        codeSub.textContent = `We sent a code to ${email}`
+        stepEmail.style.display = 'none'
+        stepCode.style.display  = 'block'
+        codeInput.focus()
+      } else {
+        err1.textContent    = res.error ?? 'Failed to send code'
+        err1.style.display  = 'block'
+      }
+    })
+
+    btnVerify.addEventListener('click', async () => {
+      const code = codeInput.value
+      btnVerify.disabled  = true
+      btnVerify.textContent = 'Verifying…'
+      err2.style.display  = 'none'
+      const res = await window.agent.verifyCode(email, code)
+      if (!res.valid) {
+        btnVerify.disabled  = false
+        btnVerify.textContent = 'Verify & sign in'
+        err2.textContent    = res.error ?? 'Invalid code'
+        err2.style.display  = 'block'
+      }
+      // On success, main.js closes the window
+    })
+
+    btnBack.addEventListener('click', () => {
+      stepCode.style.display  = 'none'
+      stepEmail.style.display = 'block'
+      codeInput.value = ''
+      err2.style.display = 'none'
+      emailInput.focus()
+    })
+
+    emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') btnSend.click() })
+    codeInput.addEventListener('keydown',  e => { if (e.key === 'Enter' && !btnVerify.disabled) btnVerify.click() })
+  </script>
+</body>
+</html>
