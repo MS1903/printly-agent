@@ -206,6 +206,15 @@ function startServer() {
             return
           }
 
+          // If wait_for_payment is on, only print wins confirmed via WebSocket (post-payment)
+          // DOM-detected wins fire before payment is processed — skip them in this mode
+          if (settings?.wait_for_payment && win.source === 'dom') {
+            console.log('[Printly Agent] Skipping dom win — wait_for_payment is on')
+            res.writeHead(200)
+            res.end(JSON.stringify({ ok: true, skipped: 'waiting_for_payment' }))
+            return
+          }
+
           // Print if auto_print is enabled
           if (settings?.auto_print !== false) {
             const orderNumber = nextOrderNumber()
