@@ -1,10 +1,10 @@
-const { app, Tray, Menu, BrowserWindow, shell, nativeImage } = require('electron')
+const { app, Tray, Menu, BrowserWindow, shell, nativeImage, Notification } = require('electron')
 const http = require('http')
 const path = require('path')
 const Store = require('electron-store')
 const { getAvailablePrinters, printLabel } = require('./printer')
 
-const API_URL = 'https://printlyapp.me'
+const API_URL = process.env.PRINTLY_API_URL || 'https://printlyapp.me'
 const PORT    = 7799
 
 const store = new Store()
@@ -34,6 +34,20 @@ function nextOrderNumber() {
   orderCounter = (orderCounter % 999) + 1
   store.set('orderCounter', orderCounter)
   return n
+}
+
+function syncOrderCounter(lastOrderNumber) {
+  if (typeof lastOrderNumber === 'number' && lastOrderNumber >= orderCounter) {
+    orderCounter = (lastOrderNumber % 999) + 1
+    store.set('orderCounter', orderCounter)
+    console.log('[Printly Agent] Order counter synced to', orderCounter)
+  }
+}
+
+function notify(title, body) {
+  if (Notification.isSupported()) {
+    new Notification({ title, body, silent: false }).show()
+  }
 }
 
 // ── Tray ─────────────────────────────────────────────────────────────────────
@@ -123,6 +137,7 @@ async function fetchSettings() {
       const data = await res.json()
       settings  = data.settings  ?? null
       userEmail = data.email     ?? userEmail
+      syncOrderCounter(data.last_order_number)
       // Update printer list in Supabase
       const printers = await getAvailablePrinters()
       const printerList = printers.map(p => ({ name: p.name, isDefault: p.isDefault }))
@@ -183,8 +198,16 @@ function startServer() {
             winId = winData.win_id
           }
 
-          // Print if auto_print is enabled and we have a printer + settings
-          if (settings?.auto_print !== false && settings?.printer_name) {
+          // Warn if no printer configured
+          if (!settings?.printer_name) {
+            notify('No printer configured', 'Open Printly settings to select a printer')
+            res.writeHead(200)
+            res.end(JSON.stringify({ ok: true, warning: 'no_printer' }))
+            return
+          }
+
+          // Print if auto_print is enabled
+          if (settings?.auto_print !== false) {
             const orderNumber = nextOrderNumber()
             const labelData = {
               orderNumber,
@@ -203,6 +226,17 @@ function startServer() {
             const copies = settings.copies ?? 1
             for (let i = 0; i < copies; i++) {
               printLabel(settings.printer_name, labelData).then((result) => {
+                if (result.success) {
+                  notify(
+                    'Label printed ✓',
+                    `@${labelData.buyerName} · Order ${String(orderNumber).padStart(3, '0')}${labelData.price ? ` · $${labelData.price.toFixed(2)}` : ''}`
+                  )
+                } else {
+                  notify(
+                    'Print failed',
+                    `@${labelData.buyerName} — ${result.error ?? 'Unknown error'}`
+                  )
+                }
                 // Record print job result to backend
                 if (winId) {
                   apiFetch('/api/agent/print-result', {
@@ -210,7 +244,9 @@ function startServer() {
                     body: JSON.stringify({ win_id: winId, success: result.success, error: result.error })
                   }).catch(() => {})
                 }
-              }).catch(() => {})
+              }).catch((err) => {
+                notify('Print error', `@${labelData.buyerName} — ${err.message}`)
+              })
             }
           }
 
@@ -230,7 +266,6 @@ function startServer() {
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      // Another instance is already running — just use this one as a second tray icon
       console.warn(`[Printly Agent] Port ${PORT} already in use — another instance may be running`)
     } else {
       console.error('[Printly Agent] Server error:', err)
@@ -280,7 +315,7 @@ app.whenReady().then(async () => {
   showLoginWindow()
 })
 
-// Heartbeat every 60 seconds
+// Heartbeat every 60 seconds — syncs settings + order counter
 setInterval(() => {
   if (!getToken()) return
   getAvailablePrinters().then(printers => {
@@ -289,6 +324,7 @@ setInterval(() => {
       body: JSON.stringify({ printer_list: printers.map(p => ({ name: p.name, isDefault: p.isDefault })), device_id: 'agent-' + require('os').hostname() })
     }).then(res => res.ok ? res.json() : null).then(data => {
       if (data?.settings) { settings = data.settings }
+      syncOrderCounter(data?.last_order_number)
     }).catch(() => {})
   }).catch(() => {})
 }, 60000)

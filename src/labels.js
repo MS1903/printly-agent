@@ -34,9 +34,9 @@ function buildLabelHtml(data) {
       .order-label{font-size:9px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;margin-top:4px;margin-bottom:1px;}
       .order-number{font-size:44px;font-weight:900;line-height:1;letter-spacing:-.02em;margin-bottom:4px;}
       .buyer{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin:5px 0 2px;}
-      .item{font-size:13px;font-weight:400;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-bottom:3px;}
+      .item{font-size:13px;font-weight:400;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;margin-bottom:3px;}
       .price{font-size:18px;font-weight:700;margin:3px 0;}
-      .meta{font-size:10px;color:#555;margin:2px 0;}
+      .meta{font-size:10px;color:#111;margin:2px 0;}
       .seller{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:4px 0 2px;}
     </style></head><body>
     <div class="receipt">
@@ -70,8 +70,9 @@ function buildLabelHtml(data) {
       .order-number{font-size:${orderSize};font-weight:900;line-height:1;letter-spacing:-.02em;color:${data.accentColor||'#000'};}
       .divider{width:70%;border:none;border-top:1px solid #ccc;}
       .buyer{font-size:${buyerSize};font-weight:800;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-      .item{font-size:${itemSize};font-weight:400;color:#333;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
-      .meta{font-size:9px;color:#666;text-align:center;}
+      .item{font-size:${itemSize};font-weight:400;color:#111;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+      .meta{font-size:9px;color:#111;text-align:center;}
+      .seller{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#111;text-align:center;}
     </style></head><body>
     <div class="label">
       <div class="order-label">Order</div>
@@ -80,6 +81,7 @@ function buildLabelHtml(data) {
       <div class="buyer">@${data.buyerName}</div>
       ${data.itemName ? `<div class="item">${data.itemName}</div>` : ''}
       ${(data.showPrice && data.price) || data.showTimestamp ? `<div class="meta">${[data.showPrice && data.price ? `$${Number(data.price).toFixed(2)}` : '', data.showTimestamp ? data.timestamp : ''].filter(Boolean).join(' · ')}</div>` : ''}
+      ${data.sellerName ? `<div class="seller">${data.sellerName}</div>` : ''}
     </div></body></html>`
   }
 
@@ -96,8 +98,9 @@ function buildLabelHtml(data) {
       .divider{width:1.5px;background:${data.accentColor||'#000'};flex-shrink:0;}
       .right{flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding-left:8px;gap:3px;min-width:0;}
       .buyer{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.2;}
-      .item{font-size:11px;font-weight:500;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;line-height:1.2;}
-      .meta{font-size:11px;font-weight:700;color:#333;line-height:1.2;}
+      .item{font-size:11px;font-weight:500;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;line-height:1.2;}
+      .meta{font-size:11px;font-weight:700;color:#111;line-height:1.2;}
+      .seller{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#111;line-height:1.2;}
     </style></head><body>
     <div class="label">
       <div class="left">
@@ -109,6 +112,7 @@ function buildLabelHtml(data) {
         <div class="buyer">@${data.buyerName}</div>
         ${data.itemName ? `<div class="item">${data.itemName}</div>` : ''}
         ${(data.showPrice && data.price) || data.showTimestamp ? `<div class="meta">${[data.showPrice && data.price ? `$${Number(data.price).toFixed(2)}` : '', data.showTimestamp ? data.timestamp : ''].filter(Boolean).join('  ')}</div>` : ''}
+        ${data.sellerName ? `<div class="seller">${data.sellerName}</div>` : ''}
       </div>
     </div></body></html>`
   }
@@ -134,8 +138,9 @@ function buildLabelHtml(data) {
     .order-number{font-size:${orderFontSize};font-weight:900;line-height:1;letter-spacing:-.02em;}
     .info-block{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:1px;}
     .buyer{font-size:${nameFontSize};font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .item{font-size:${itemFontSize};font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#222;}
-    .meta{font-size:${metaFontSize};color:#666;display:flex;gap:6px;}
+    .item{font-size:${itemFontSize};font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#111;}
+    .meta{font-size:${metaFontSize};color:#111;display:flex;gap:6px;}
+    .seller{font-size:${metaFontSize};color:#111;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
   </style></head><body>
   <div class="label">
     <div class="order-block">
@@ -149,6 +154,7 @@ function buildLabelHtml(data) {
         ${data.showPrice && data.price ? `<span>$${Number(data.price).toFixed(2)}</span>` : ''}
         ${data.showTimestamp ? `<span>${data.timestamp}</span>` : ''}
       </div>
+      ${data.sellerName ? `<div class="seller">${data.sellerName}</div>` : ''}
     </div>
   </div></body></html>`
 }

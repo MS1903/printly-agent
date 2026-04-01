@@ -71,9 +71,14 @@ function runPrintJob(dataUrl, printOpts, viewportMicrons) {
 
 // macOS Dymo path: render HTML → PDF → send via lp with CUPS paper name
 const DYMO_PAPER_FALLBACK = {
-  '1.125x3.5': 'w79h252',
-  '1x2.125':   'w72h152',
-  '1.25x2.25': 'w90h162',
+  '1.125x3.5': 'w81h252',   // DYMO 30336 — 1-1/8" × 3-1/2"
+  '1x2.125':   'w72h153',   // DYMO 30252 — 1" × 2-1/8" address
+  '1.25x2.25': 'w90h162',   // DYMO 30330 — 1-1/4" × 2-1/4"
+  '2.25x1.25': 'w162h90',   // DYMO 30373 — jewelry hang tag (2.25" × 1.25")
+  '2x1':       'w144h72',   // DYMO 30332 — 2" × 1"
+  '1x3':       'w72h216',   // DYMO 30345 — 1" × 3"
+  '2x3':       'w144h216',  // DYMO 30256 — 2" × 3" (multi-purpose)
+  '4x6':       'w288h432',  // 4" × 6" shipping label
 }
 const cupsPaperCache = new Map()
 
@@ -108,6 +113,7 @@ function printDymoMacOS(html, dims, printerName, cupsPaper) {
       setTimeout(() => {
         win.webContents.printToPDF({
           printBackground: true,
+          // printToPDF expects INCHES (not microns like webContents.print)
           pageSize: { width: dims.width / 25400, height: dims.height / 25400 },
           margins: { marginType: 'none' }
         }).then((pdfBuffer) => {
@@ -129,6 +135,8 @@ async function printLabel(printerName, data) {
   const dims = LABEL_DIMENSIONS[data.labelSize] ?? LABEL_DIMENSIONS['2x3']
   const html = buildLabelHtml(data)
 
+  console.log('[Printly print] labelSize:', data.labelSize, 'dims:', dims, 'printer:', printerName)
+
   const isDymo = /dymo|labelwriter/i.test(printerName)
   if (isDymo && process.platform === 'darwin') {
     const cacheKey = `${printerName}|${data.labelSize}`
@@ -136,10 +144,16 @@ async function printLabel(printerName, data) {
     if (!cupsPaper) {
       const wPts = Math.round(dims.width  / 25400 * 72)
       const hPts = Math.round(dims.height / 25400 * 72)
-      cupsPaper = await findCupsPaperSize(printerName, wPts, hPts) ?? DYMO_PAPER_FALLBACK[data.labelSize]
+      console.log('[Printly print] looking for CUPS size wPts:', wPts, 'hPts:', hPts)
+      const found = await findCupsPaperSize(printerName, wPts, hPts)
+      const fallback = DYMO_PAPER_FALLBACK[data.labelSize]
+      cupsPaper = found ?? fallback
+      console.log('[Printly print] CUPS found:', found, 'fallback:', fallback, 'using:', cupsPaper)
       if (cupsPaper) cupsPaperCache.set(cacheKey, cupsPaper)
     }
+    console.log('[Printly print] final cupsPaper:', cupsPaper)
     if (cupsPaper) return enqueuePrint(() => printDymoMacOS(html, dims, printerName, cupsPaper))
+    console.log('[Printly print] no cupsPaper — falling back to webContents.print()')
   }
 
   const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
