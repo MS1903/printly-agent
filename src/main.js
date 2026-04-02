@@ -230,6 +230,7 @@ function startServer() {
               printerName:   settings.printer_name,
               accentColor:   settings.brand_accent_color ?? '#000000',
               sellerName:    settings.brand_seller_name  ?? '',
+              logoUrl:       settings.brand_logo_url     ?? null,
             }
 
             const copies = settings.copies ?? 1

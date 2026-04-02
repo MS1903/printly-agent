@@ -38,8 +38,10 @@ function buildLabelHtml(data) {
       .price{font-size:18px;font-weight:700;margin:3px 0;}
       .meta{font-size:10px;color:#111;margin:2px 0;}
       .seller{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:4px 0 2px;}
+      .logo{max-height:16mm;max-width:80%;object-fit:contain;margin-bottom:4px;}
     </style></head><body>
     <div class="receipt">
+      ${data.logoUrl ? `<img class="logo" src="${data.logoUrl}" />` : ''}
       <hr class="divider">
       <div class="order-label">Order</div>
       <div class="order-number">${String(data.orderNumber).padStart(3,'0')}</div>
@@ -73,8 +75,10 @@ function buildLabelHtml(data) {
       .item{font-size:${itemSize};font-weight:400;color:#111;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
       .meta{font-size:9px;color:#111;text-align:center;}
       .seller{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#111;text-align:center;}
+      .logo{max-height:${labelSize === '1.125x3.5' ? '16px' : '13px'};max-width:85%;object-fit:contain;}
     </style></head><body>
     <div class="label">
+      ${data.logoUrl ? `<img class="logo" src="${data.logoUrl}" />` : ''}
       <div class="order-label">Order</div>
       <div class="order-number">${String(data.orderNumber).padStart(3,'0')}</div>
       <hr class="divider">
@@ -101,6 +105,7 @@ function buildLabelHtml(data) {
       .item{font-size:11px;font-weight:500;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;line-height:1.2;}
       .meta{font-size:11px;font-weight:700;color:#111;line-height:1.2;}
       .seller{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#111;line-height:1.2;}
+      .logo{max-height:14px;max-width:90%;object-fit:contain;}
     </style></head><body>
     <div class="label">
       <div class="left">
@@ -109,6 +114,7 @@ function buildLabelHtml(data) {
       </div>
       <div class="divider"></div>
       <div class="right">
+        ${data.logoUrl ? `<img class="logo" src="${data.logoUrl}" />` : ''}
         <div class="buyer">@${data.buyerName}</div>
         ${data.itemName ? `<div class="item">${data.itemName}</div>` : ''}
         ${(data.showPrice && data.price) || data.showTimestamp ? `<div class="meta">${[data.showPrice && data.price ? `$${Number(data.price).toFixed(2)}` : '', data.showTimestamp ? data.timestamp : ''].filter(Boolean).join('  ')}</div>` : ''}
@@ -141,6 +147,7 @@ function buildLabelHtml(data) {
     .item{font-size:${itemFontSize};font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#111;}
     .meta{font-size:${metaFontSize};color:#111;display:flex;gap:6px;}
     .seller{font-size:${metaFontSize};color:#111;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+    .logo{max-height:${isLarge ? '36px' : '20px'};max-width:90%;object-fit:contain;margin-bottom:1px;}
   </style></head><body>
   <div class="label">
     <div class="order-block">
@@ -148,6 +155,7 @@ function buildLabelHtml(data) {
       <div class="order-number">${String(data.orderNumber).padStart(3,'0')}</div>
     </div>
     <div class="info-block">
+      ${data.logoUrl && !isSmall ? `<img class="logo" src="${data.logoUrl}" />` : ''}
       <div class="buyer">@${data.buyerName}</div>
       ${data.itemName ? `<div class="item">${data.itemName}</div>` : ''}
       <div class="meta">
