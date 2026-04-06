@@ -22,9 +22,11 @@ function getEnumWindow() {
   return enumWindow
 }
 
-app.on('before-quit', () => {
-  if (enumWindow && !enumWindow.isDestroyed()) { enumWindow.destroy(); enumWindow = null }
-})
+function initPrinter() {
+  app.on('before-quit', () => {
+    if (enumWindow && !enumWindow.isDestroyed()) { enumWindow.destroy(); enumWindow = null }
+  })
+}
 
 async function getAvailablePrinters() {
   return getEnumWindow().webContents.getPrintersAsync()
@@ -164,4 +166,4 @@ async function printLabel(printerName, data) {
   }, dims))
 }
 
-module.exports = { getAvailablePrinters, printLabel }
+module.exports = { getAvailablePrinters, printLabel, initPrinter }

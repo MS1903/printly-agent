@@ -2,7 +2,7 @@ const { app, Tray, Menu, BrowserWindow, shell, nativeImage, Notification } = req
 const http = require('http')
 const path = require('path')
 const Store = require('electron-store')
-const { getAvailablePrinters, printLabel } = require('./printer')
+const { getAvailablePrinters, printLabel, initPrinter } = require('./printer')
 
 const API_URL = process.env.PRINTLY_API_URL || 'https://printlyapp.me'
 const PORT    = 7799
@@ -293,6 +293,7 @@ app.setLoginItemSettings({ openAtLogin: true })  // auto-start on login
 app.dock?.hide()  // macOS: hide from dock
 
 app.whenReady().then(async () => {
+  initPrinter()
   // Create tray icon
   const iconPath = path.join(__dirname, '..', 'build',
     process.platform === 'darwin' ? 'iconTemplate.png' : 'icon.ico')
